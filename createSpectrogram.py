@@ -4,15 +4,17 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
+from pydub import AudioSegment
+
 
 p = pyaudio.PyAudio()
 rate = 44100
 chunk = 1024
-recording_length = 2
+recording_length = 5
 channels = 1
 p_format = pyaudio.paInt16
-start_threshold_silence = 30
-end_threshold_silence = 30
+start_threshold_silence = 50
+end_threshold_silence = 70
 stream = p.open(format=p_format,
 				channels=channels,
 				rate=rate,
@@ -49,18 +51,12 @@ def record_for_time(time, filename):
 		plot_wav(f, dispEnds=True, start=start, end=end)
 		#print('Start: {}, End: {}'.format(start,end))
 
-	with wave.open(filename,'wb') as f:
-		f.setnchannels(channels)
-		f.setsampwidth(p.get_sample_size(p_format))
-		f.setframerate(rate)
-		full_data = []
-		for frame in frames:
-			for data in frame:
-				full_data.append(data)
-		full_data = np.array(full_data)
-		wavfile.write(filename, rate, full_data)
-		#f.writeframes(b''.join(frames[start:end]))
-		#print(len(frames[start:end]), start, end)
+	start_millis = int(start * recording_length * 1000) # Convert to millis
+	end_millis = int(end * recording_length * 1000)
+	newAudio = AudioSegment.from_wav(filename)
+	newAudio = newAudio[start_millis:end_millis]
+	newAudio.export(filename, format="wav")
+
 	with wave.open(filename, 'r') as f:
 		plot_wav(f)
 
@@ -90,6 +86,6 @@ def find_whitespace(file, frames):
 			#print('val', val)
 			break
 		end -= 1
-	return start, end
+	return start/len(x), end/len(x)
 
 record_for_time(recording_length, 'output.wav')
