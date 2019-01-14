@@ -13,8 +13,11 @@ chunk = 1024
 recording_length = 5
 channels = 1
 p_format = pyaudio.paInt16
+
+#These were calculated using my voice, may need to change with guitar
 start_threshold_silence = 50
 end_threshold_silence = 70
+
 stream = p.open(format=p_format,
 				channels=channels,
 				rate=rate,
@@ -41,18 +44,20 @@ def record_for_time(time, filename):
 
 	start = 0
 	end = 0
+	start_sec = 0
+	end_sec = 0
 	with wave.open(filename, 'wb') as f:
 		f.setnchannels(channels)
 		f.setsampwidth(p.get_sample_size(p_format))
 		f.setframerate(rate)
 		f.writeframes(b''.join(frames))
-	with wave.open(filename,'r') as f:
-		start, end = find_whitespace(f, frames)
-		plot_wav(f, dispEnds=True, start=start, end=end)
-		#print('Start: {}, End: {}'.format(start,end))
 
-	start_millis = int(start * recording_length * 1000) # Convert to millis
-	end_millis = int(end * recording_length * 1000)
+	with wave.open(filename,'r') as f:
+		start, end, start_sec, end_sec = find_whitespace(f, frames)
+		plot_wav(f, dispEnds=True, start=start, end=end)
+
+	start_millis = int(start_sec * recording_length * 1000) # Convert to millis
+	end_millis = int(end_sec * recording_length * 1000)
 	newAudio = AudioSegment.from_wav(filename)
 	newAudio = newAudio[start_millis:end_millis]
 	newAudio.export(filename, format="wav")
@@ -86,6 +91,6 @@ def find_whitespace(file, frames):
 			#print('val', val)
 			break
 		end -= 1
-	return start/len(x), end/len(x)
+	return start, end, start/len(x), end/len(x)
 
 record_for_time(recording_length, 'output.wav')
