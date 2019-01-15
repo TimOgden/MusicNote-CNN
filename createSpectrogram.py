@@ -19,8 +19,8 @@ channels = 1
 p_format = pyaudio.paInt16
 
 #These were calculated using my voice, may need to change with guitar
-start_threshold_silence = 70
-end_threshold_silence = 70
+start_threshold_silence = 30
+end_threshold_silence = 30
 
 stream = p.open(format=p_format,
 				channels=channels,
@@ -134,6 +134,8 @@ def plot_image(path, img):
 each_chord = {}
 num_rep = 5
 
+record_for_time(recording_length, 'output.wav')
+'''
 while True:
 	chord = gen_random_chord()
 	search_google(chord)
@@ -155,3 +157,4 @@ while True:
 		if keep == 'q':
 			os.remove(file)
 			break
+'''
