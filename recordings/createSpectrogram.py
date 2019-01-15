@@ -23,7 +23,7 @@ p_format = pyaudio.paInt16
 start_threshold_silence = 30
 end_threshold_silence = 30
 
-chords_plot_time = 4
+chords_plot_time = 6
 wav_plot_time = 1.5
 
 stream = p.open(format=p_format,
@@ -147,8 +147,9 @@ each_chord = {}
 
 #record_for_time(recording_length, 'output.wav')
 
-
+c = 0
 while True:
+
 	chord = gen_random_chord()
 	search_google(chord)
 	plot_chords(chord)
@@ -158,6 +159,10 @@ while True:
 		each_chord[chord] += 1
 	else:
 		each_chord[chord] = 1
+	
+	if c % 10 == 0:
+		print(each_chord)
+
 	
 	file = ""
 	num_rep = 5
