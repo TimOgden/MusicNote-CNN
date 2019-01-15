@@ -105,7 +105,7 @@ def gen_random_chord():
 	return chord_customizers['root_note'][note] + " " + chord_customizers['chord_type'][c_type]
 
 def plot_chords(chordDir):
-	path="C:\\Users\\Tim\\ProgrammingProjects\\MusicNote-CNN\\downloads\\" + chordDir + " guitar chord"
+	path="C:\\Users\\Tim\\ProgrammingProjects\\MusicNote-CNN\\recordings\\downloads\\" + chordDir + " guitar chord"
 	num_rows = 3
 	num_cols = 3
 	num_images = 3*3
@@ -142,10 +142,12 @@ while True:
 		each_chord[chord] += 1
 	else:
 		each_chord[chord] = 1
-	keep = 'n'
+	
 	file = ""
 	num_rep = 5
 	for i in range(num_rep):
+		print('taking step {} of {}'.format(i+1, num_rep))
+		keep = 'n'
 		while keep == 'n':
 			file = chord + "-" + str(each_chord[chord]) + '.wav'
 			record_for_time(recording_length, file)
