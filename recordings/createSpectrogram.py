@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 from scipy.io import wavfile
+from scipy import signal
 from pydub import AudioSegment
 import random
 from searchChord import search_google
@@ -15,15 +16,15 @@ import time
 p = pyaudio.PyAudio()
 rate = 44100
 chunk = 1024
-recording_length = 6
+recording_length = 5
 channels = 1
 p_format = pyaudio.paInt16
 
 #These were calculated using my voice, may need to change with guitar
-start_threshold_silence = 30
-end_threshold_silence = 30
+start_threshold_silence = 50
+end_threshold_silence = 20
 
-chords_plot_time = 6
+chords_plot_time = 15
 wav_plot_time = 1.5
 
 stream = p.open(format=p_format,
@@ -34,7 +35,7 @@ stream = p.open(format=p_format,
 
 
 
-def record_for_time(time, filename):
+def record_for_time(time, filename, plot_spectrogram=True):
 	#filename = "\\recordings\\" + filename
 	print('* recording')
 
@@ -66,9 +67,35 @@ def record_for_time(time, filename):
 	newAudio = newAudio[start_millis:end_millis]
 	newAudio.export(filename, format="wav")
 
+	if plot_spectrogram:
+		plot_spect(filename)
+	
+	#plt.pause(wav_plot_time)
+	#plt.close()
 	# Plot again to see what was removed
 	#with wave.open(filename, 'r') as f:
 		#plot_wav(f)
+
+def plot_spect(file):
+	sample_rates, samples = wavfile.read(file)
+	plt.specgram(samples,Fs=8000)
+	plt.xlabel('Time')
+	plt.ylabel('Frequency (Hz)')
+	#plt.ylim(top=8000)
+	plt.show()
+
+def plot_both(file1, file2):
+	sample_rates1, samples1 = wavfile.read(file1)
+	plt.figure(1)
+	plt.subplot(211)
+	plt.specgram(samples1,Fs=8000)
+	
+	sample_rates2, samples2 = wavfile.read(file2)
+	plt.subplot(212)
+	plt.specgram(samples2,Fs=8000)
+	plt.xlabel('Time')
+	plt.ylabel('Frequency (Hz)')
+	plt.show()
 
 def plot_wav(file, dispEnds=False, start=0, end=0):
 	signal = file.readframes(-1)
@@ -145,8 +172,14 @@ def plot_image(path, img):
 each_chord = {}
 
 
-#record_for_time(recording_length, 'output.wav')
+'''
+record_for_time(recording_length, 'output0.wav', plot_spectrogram=False)
+record_for_time(recording_length, 'output1.wav', plot_spectrogram=False)
+plot_both('output0.wav', 'output1.wav')
+'''
 
+record_for_time(recording_length, 'output0.wav', plot_spectrogram=True)
+'''
 c = 0
 while True:
 
@@ -162,8 +195,8 @@ while True:
 	
 	if c % 10 == 0:
 		print(each_chord)
+	c+=1
 
-	
 	file = ""
 	num_rep = 5
 	for i in range(num_rep):
@@ -181,7 +214,7 @@ while True:
 
 		each_chord[chord] += 1
 
-
+'''
 stream.stop_stream()
 stream.close()
 p.terminate()
