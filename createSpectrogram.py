@@ -8,13 +8,13 @@ from scipy.io import wavfile
 from pydub import AudioSegment
 import random
 from searchChord import search_google
-import os
+import sys, os
 
 
 p = pyaudio.PyAudio()
 rate = 44100
 chunk = 1024
-recording_length = 2
+recording_length = 4
 channels = 1
 p_format = pyaudio.paInt16
 
@@ -42,11 +42,6 @@ def record_for_time(time, filename):
 
 	print('* done recording')
 
-	stream.stop_stream()
-	stream.close()
-	p.terminate()
-
-
 	start = 0
 	end = 0
 	start_sec = 0
@@ -58,7 +53,7 @@ def record_for_time(time, filename):
 		f.writeframes(b''.join(frames))
 
 	with wave.open(filename,'r') as f:
-		start, end, start_sec, end_sec = find_whitespace(f, frames)
+		start, end, start_sec, end_sec = find_whitespace(filename, frames)
 		plot_wav(f, dispEnds=True, start=start, end=end)
 
 	start_millis = int(start_sec * recording_length * 1000) # Convert to millis
@@ -81,7 +76,7 @@ def plot_wav(file, dispEnds=False, start=0, end=0):
 	plt.show()
 
 def find_whitespace(file, frames):
-	[fs, x] = wavfile.read('output.wav')
+	[fs, x] = wavfile.read(file)
 	start = 0
 	for c, val in enumerate(x):
 		if abs(val) >= start_threshold_silence:
@@ -132,10 +127,10 @@ def plot_image(path, img):
 	plt.imshow(img, cmap=plt.cm.binary)
 
 each_chord = {}
-num_rep = 5
 
-record_for_time(recording_length, 'output.wav')
-'''
+
+#record_for_time(recording_length, 'output.wav')
+
 while True:
 	chord = gen_random_chord()
 	search_google(chord)
@@ -147,14 +142,19 @@ while True:
 	else:
 		each_chord[chord] = 1
 	keep = 'n'
-	file = chord + "-" + str(each_chord[chord]) + '.wav'
-	for _ in range(num_rep):
-		while keep != 'y' and keep != 'q':
-			if os.path.isfile(file):
-				os.remove(file)
-			record_for_time(recording_length, chord + "-" + str(each_chord[chord]) + '.wav')
+	file = ""
+	num_rep = 5
+	for i in range(num_rep):
+		while keep == 'n':
+			file = chord + "-" + str(each_chord[chord]) + '.wav'
+			record_for_time(recording_length, file)
 			keep = input('Keep this recording? - ')
 		if keep == 'q':
 			os.remove(file)
-			break
-'''
+			sys.exit(0)
+		if keep == 'n':
+			os.remove(file)
+
+stream.stop_stream()
+stream.close()
+p.terminate()
