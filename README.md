@@ -1,4 +1,4 @@
-#Things to add:
+## Things to add:
 
 search_google checks if directory exists before downloading
 
