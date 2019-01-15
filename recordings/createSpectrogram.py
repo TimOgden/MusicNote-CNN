@@ -9,18 +9,22 @@ from pydub import AudioSegment
 import random
 from searchChord import search_google
 import sys, os
+import time
 
 
 p = pyaudio.PyAudio()
 rate = 44100
 chunk = 1024
-recording_length = 4
+recording_length = 6
 channels = 1
 p_format = pyaudio.paInt16
 
 #These were calculated using my voice, may need to change with guitar
 start_threshold_silence = 30
 end_threshold_silence = 30
+
+chords_plot_time = 4
+wav_plot_time = 1.5
 
 stream = p.open(format=p_format,
 				channels=channels,
@@ -62,18 +66,22 @@ def record_for_time(time, filename):
 	newAudio = newAudio[start_millis:end_millis]
 	newAudio.export(filename, format="wav")
 
-	with wave.open(filename, 'r') as f:
-		plot_wav(f)
+	# Plot again to see what was removed
+	#with wave.open(filename, 'r') as f:
+		#plot_wav(f)
 
 def plot_wav(file, dispEnds=False, start=0, end=0):
 	signal = file.readframes(-1)
 	signal = np.fromstring(signal, 'Int16')
-	plt.figure(1)
+	plt.figure()
 	plt.plot(signal)
 	if dispEnds:
 		plt.axvline(start, color='r')
 		plt.axvline(end, color='r')
-	plt.show()
+	plt.show(block=False)
+	plt.pause(wav_plot_time)
+	plt.close()
+	
 
 def find_whitespace(file, frames):
 	[fs, x] = wavfile.read(file)
@@ -110,21 +118,29 @@ def plot_chords(chordDir):
 	num_cols = 3
 	num_images = 3*3
 
-	plt.figure(figsize=(2*2*num_cols, num_rows))
+	plt.figure(chordDir, figsize=(2*2*num_cols, num_rows))
 	plt.title(chordDir)
 	i = 0
 	for filename in os.listdir(path):
 		plt.subplot(num_rows, 3*num_cols, 3*i+1)
 		plot_image(path, filename)
 		i+=1
-	plt.show()
+	figManager = plt.get_current_fig_manager()
+	figManager.window.showMaximized()
+	plt.show(block=False)
+	plt.pause(chords_plot_time)
+	plt.close()
 
 def plot_image(path, img):
 	plt.grid(False)
 	plt.xticks([])
 	plt.yticks([])
-	img = mpimg.imread(path + "\\" + img)
-	plt.imshow(img, cmap=plt.cm.binary)
+	try:
+		img = mpimg.imread(path + "\\" + img)
+		plt.imshow(img, cmap=plt.cm.binary)
+	except:
+		pass
+
 
 each_chord = {}
 
@@ -146,7 +162,7 @@ while True:
 	file = ""
 	num_rep = 5
 	for i in range(num_rep):
-		print('taking step {} of {}'.format(i+1, num_rep))
+		print('Recording #{} of {}'.format(i+1, num_rep))
 		keep = 'n'
 		while keep == 'n':
 			file = chord + "-" + str(each_chord[chord]) + '.wav'
@@ -157,6 +173,8 @@ while True:
 			sys.exit(0)
 		if keep == 'n':
 			os.remove(file)
+
+		each_chord[chord] += 1
 
 
 stream.stop_stream()
