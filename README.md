@@ -4,6 +4,8 @@
 
 - create all training data
 
+- preprocessing should take only one column of pixels and normalize all of them, possibly 1 being green and 0 being blue
+
 # Things completed:
 
 - ~~search_google checks if directory exists before downloading~~

@@ -16,12 +16,12 @@ import time
 p = pyaudio.PyAudio()
 rate = 44100
 chunk = 1024
-recording_length = 10
+recording_length = 3
 channels = 1
 p_format = pyaudio.paInt16
 
 #These were calculated using my voice, may need to change with guitar
-start_threshold_silence = 50
+start_threshold_silence = 120
 end_threshold_silence = 30
 
 chords_plot_time = 15
@@ -48,7 +48,7 @@ note_freq = {'A': [27.50,55.00,110.00,220.00,440.00,880.00,1760.00,3520.00,7040.
 
 colors = ['b','m','r','c','k','w']
 
-def record_for_time(time, filename, plot_spectrogram=True):
+def record_for_time(time, filename, note=None, plot_spectrogram=True):
 	#filename = "\\recordings\\" + filename
 	print('* recording')
 
@@ -81,7 +81,7 @@ def record_for_time(time, filename, plot_spectrogram=True):
 	newAudio.export(filename, format="wav")
 
 	if plot_spectrogram:
-		plot_spect(filename, dispNotes=False)
+		plot_spect(filename, note, dispNotes=False)
 	
 	#plt.pause(wav_plot_time)
 	#plt.close()
@@ -89,19 +89,28 @@ def record_for_time(time, filename, plot_spectrogram=True):
 	#with wave.open(filename, 'r') as f:
 		#plot_wav(f)
 
-def plot_spect(file, dispNotes=False):
+def plot_spect(file, note, dispNotes=False):
 	sample_rates, samples = wavfile.read(file)
 	frequencies, times, spectrogram = signal.spectrogram(samples,sample_rates,nfft=2048, noverlap=1800, nperseg=2048)
-
-	plt.pcolormesh(times, frequencies, 10*np.log10(spectrogram))
+	fig = plt.figure(frameon=False)
+	try:
+		plt.pcolormesh(times, frequencies, 10*np.log10(spectrogram))
+	except:
+		pass
 	plt.ylabel('Frequency [Hz]')
 	plt.xlabel('Time [sec]')
-	plt.savefig('')
+	
 	if dispNotes:
-		displayNotes(['C','D','E','F','G','A','B'], 0, 8)
+		displayNotes([note], 4, 8)
 		
-	#plt.ylim(top=8000)
+	#plt.ylim(top=8000)\
+	fig.savefig(file, bbox_inches='tight', pad_inches=0)
+	figManager = plt.get_current_fig_manager()
+	figManager.window.showMaximized()
 	plt.show()
+	#plt.pause(3)
+	#plt.close()
+	
 
 def displayNotes(notes, start_octave, end_octave):
 	c = 0
@@ -115,7 +124,7 @@ def displayNotes(notes, start_octave, end_octave):
 				plt.axhline(note_freq[note][i], color=colors[c], linewidth=3)
 			else:
 				plt.axhline(note_freq[note][i], linestyle='--', color=colors[c], linewidth=3)
-		c+=1
+			c+=1
 
 
 def plot_both(file1, file2):
@@ -129,7 +138,10 @@ def plot_both(file1, file2):
 	sample_rates2, samples2 = wavfile.read(file2)
 	plt.subplot(212)
 	frequencies2, times2, spectrogram2 = signal.spectrogram(samples2,sample_rates2,nfft=2048, noverlap=1800, nperseg=2048)
-	plt.pcolormesh(times2, frequencies2, 10*np.log10(spectrogram2))
+	try:
+		plt.pcolormesh(times2, frequencies2, 10*np.log10(spectrogram2))
+	except:
+		pass
 	plt.xlabel('Time')
 	plt.ylabel('Frequency (Hz)')
 
@@ -229,7 +241,7 @@ while True:
 	#search_google(chord)
 	#plot_chords(chord)
 	print(chord)
-
+	time.sleep(5)
 	if chord in each_chord:
 		each_chord[chord] += 1
 	else:
@@ -245,8 +257,9 @@ while True:
 		print('Recording #{} of {}'.format(i+1, num_rep))
 		keep = 'n'
 		while keep == 'n':
-			file = chord + "-" + str(each_chord[chord]) + '.wav'
-			record_for_time(recording_length, file, plot_spectrogram=True)
+			file = chord + "-" + str(each_chord[chord]) + '.png'
+			time.sleep(1)
+			record_for_time(recording_length, file, plot_spectrogram=True, note=chord)
 			keep = input('Keep this recording? - ')
 		if keep == 'q':
 			os.remove(file)
@@ -256,7 +269,7 @@ while True:
 
 		each_chord[chord] += 1
 
-'''
+
 stream.stop_stream()
 stream.close()
 p.terminate()
