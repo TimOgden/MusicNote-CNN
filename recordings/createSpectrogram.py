@@ -16,13 +16,13 @@ import time
 p = pyaudio.PyAudio()
 rate = 44100
 chunk = 1024
-recording_length = 5
+recording_length = 10
 channels = 1
 p_format = pyaudio.paInt16
 
 #These were calculated using my voice, may need to change with guitar
 start_threshold_silence = 50
-end_threshold_silence = 20
+end_threshold_silence = 30
 
 chords_plot_time = 15
 wav_plot_time = 1.5
@@ -33,7 +33,20 @@ stream = p.open(format=p_format,
 				input=True,
 				frames_per_buffer=chunk)
 
+note_freq = {'A': [27.50,55.00,110.00,220.00,440.00,880.00,1760.00,3520.00,7040.00],
+				'A#': [29.14,58.27,116.54,233.08,466.16,932.33,1864.66,3729.31,7458.62],
+				'B': [30.87,61.74,123.47,246.94,493.88,987.77,1975.53,3951.07,7902.13],
+				'C': [16.35,32.70,65.41,130.81,261.63,523.25,1046.50,2093.00,4186.01],
+				'C#': [17.32,34.65,69.30,138.59,277.18,554.37,1108.73,2217.46,4434.92],
+				'D': [18.35,36.71,73.42,146.83,293.66,587.33,1174.66,2349.32,4698.63],
+				'D#': [19.45,38.89,77.78,155.56,311.13,622.25,1244.51,2489.02,4978.03],
+				'E': [20.60,41.20,82.41,164.81,329.63,659.25,1318.51,2637.02,5274.04],
+				'F': [21.83,43.65,87.31,174.61,349.23,698.46,1396.91,2793.83,5587.65],
+				'F#': [23.12,46.25,92.50,185.00,369.99,739.99,1479.98,2959.96,5919.91],
+				'G': [24.50,49.00,98.00,196.00,392.00,783.99,1567.98,3135.96,6271.93],
+				'G#': [25.96,51.91,103.83,207.65,415.30,830.61,1661.22,3322.44,6644.88]}
 
+colors = ['b','m','r','c','k','w']
 
 def record_for_time(time, filename, plot_spectrogram=True):
 	#filename = "\\recordings\\" + filename
@@ -68,7 +81,7 @@ def record_for_time(time, filename, plot_spectrogram=True):
 	newAudio.export(filename, format="wav")
 
 	if plot_spectrogram:
-		plot_spect(filename)
+		plot_spect(filename, dispNotes=False)
 	
 	#plt.pause(wav_plot_time)
 	#plt.close()
@@ -76,27 +89,50 @@ def record_for_time(time, filename, plot_spectrogram=True):
 	#with wave.open(filename, 'r') as f:
 		#plot_wav(f)
 
-def plot_spect(file):
+def plot_spect(file, dispNotes=False):
 	sample_rates, samples = wavfile.read(file)
-	frequencies, times, spectrogram = signal.spectrogram(samples,sample_rates,nfft=1024,noverlap=900, nperseg=2048)
+	frequencies, times, spectrogram = signal.spectrogram(samples,sample_rates,nfft=2048, noverlap=1800, nperseg=2048)
 
 	plt.pcolormesh(times, frequencies, 10*np.log10(spectrogram))
 	plt.ylabel('Frequency [Hz]')
 	plt.xlabel('Time [sec]')
+	plt.savefig('')
+	if dispNotes:
+		displayNotes(['C','D','E','F','G','A','B'], 0, 8)
+		
 	#plt.ylim(top=8000)
 	plt.show()
+
+def displayNotes(notes, start_octave, end_octave):
+	c = 0
+	looped = False
+	for note in notes:
+		if c>=len(colors):
+			c = 0
+			looped = True
+		for i in range(start_octave, end_octave):
+			if not looped:
+				plt.axhline(note_freq[note][i], color=colors[c], linewidth=3)
+			else:
+				plt.axhline(note_freq[note][i], linestyle='--', color=colors[c], linewidth=3)
+		c+=1
+
 
 def plot_both(file1, file2):
 	sample_rates1, samples1 = wavfile.read(file1)
 	plt.figure(1)
 	plt.subplot(211)
-	plt.specgram(samples1,Fs=4000)
+	frequencies1, times1, spectrogram1 = signal.spectrogram(samples1,sample_rates1,nfft=2048, noverlap=1800, nperseg=2048)
+
+	plt.pcolormesh(times1, frequencies1, 10*np.log10(spectrogram1))
 	
 	sample_rates2, samples2 = wavfile.read(file2)
 	plt.subplot(212)
-	plt.specgram(samples2,Fs=4000)
+	frequencies2, times2, spectrogram2 = signal.spectrogram(samples2,sample_rates2,nfft=2048, noverlap=1800, nperseg=2048)
+	plt.pcolormesh(times2, frequencies2, 10*np.log10(spectrogram2))
 	plt.xlabel('Time')
 	plt.ylabel('Frequency (Hz)')
+
 	plt.show()
 
 def plot_wav(file, dispEnds=False, start=0, end=0):
@@ -141,6 +177,11 @@ def gen_random_chord():
 	c_type = random.randrange(0,len(chord_customizers['chord_type']))
 	return chord_customizers['root_note'][note] + " " + chord_customizers['chord_type'][c_type]
 
+def gen_random_note():
+	note = random.randrange(0,len(chord_customizers['root_note']))
+	return chord_customizers['root_note'][note]
+
+
 def plot_chords(chordDir):
 	path="C:\\Users\\Tim\\ProgrammingProjects\\MusicNote-CNN\\recordings\\downloads\\" + chordDir + " guitar chord"
 	num_rows = 3
@@ -174,20 +215,19 @@ def plot_image(path, img):
 each_chord = {}
 
 
-'''
-record_for_time(recording_length, 'output0.wav', plot_spectrogram=False)
-record_for_time(recording_length, 'output1.wav', plot_spectrogram=False)
-plot_both('output0.wav', 'output1.wav')
-'''
+#record_for_time(recording_length, 'output0.wav', plot_spectrogram=False)
+#record_for_time(recording_length, 'output1.wav', plot_spectrogram=False)
+#plot_both('output0.wav', 'output1.wav')
 
-record_for_time(recording_length, 'output0.wav', plot_spectrogram=True)
-'''
+
+#record_for_time(recording_length, 'output0.wav', plot_spectrogram=True)
+
 c = 0
 while True:
-
-	chord = gen_random_chord()
-	search_google(chord)
-	plot_chords(chord)
+	chord = gen_random_note()
+	#chord = gen_random_chord()
+	#search_google(chord)
+	#plot_chords(chord)
 	print(chord)
 
 	if chord in each_chord:
