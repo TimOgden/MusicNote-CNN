@@ -246,7 +246,7 @@ while True:
 		keep = 'n'
 		while keep == 'n':
 			file = chord + "-" + str(each_chord[chord]) + '.wav'
-			record_for_time(recording_length, file)
+			record_for_time(recording_length, file, plot_spectrogram=True)
 			keep = input('Keep this recording? - ')
 		if keep == 'q':
 			os.remove(file)
