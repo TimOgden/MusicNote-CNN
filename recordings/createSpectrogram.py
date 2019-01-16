@@ -78,9 +78,11 @@ def record_for_time(time, filename, plot_spectrogram=True):
 
 def plot_spect(file):
 	sample_rates, samples = wavfile.read(file)
-	plt.specgram(samples,Fs=8000)
-	plt.xlabel('Time')
-	plt.ylabel('Frequency (Hz)')
+	frequencies, times, spectrogram = signal.spectrogram(samples,sample_rates,nfft=1024,noverlap=900, nperseg=2048)
+
+	plt.pcolormesh(times, frequencies, 10*np.log10(spectrogram))
+	plt.ylabel('Frequency [Hz]')
+	plt.xlabel('Time [sec]')
 	#plt.ylim(top=8000)
 	plt.show()
 
@@ -88,11 +90,11 @@ def plot_both(file1, file2):
 	sample_rates1, samples1 = wavfile.read(file1)
 	plt.figure(1)
 	plt.subplot(211)
-	plt.specgram(samples1,Fs=8000)
+	plt.specgram(samples1,Fs=4000)
 	
 	sample_rates2, samples2 = wavfile.read(file2)
 	plt.subplot(212)
-	plt.specgram(samples2,Fs=8000)
+	plt.specgram(samples2,Fs=4000)
 	plt.xlabel('Time')
 	plt.ylabel('Frequency (Hz)')
 	plt.show()
