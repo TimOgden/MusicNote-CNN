@@ -107,9 +107,9 @@ def plot_spect(file, note, dispNotes=False):
 	fig.savefig(file, bbox_inches='tight', pad_inches=0)
 	figManager = plt.get_current_fig_manager()
 	figManager.window.showMaximized()
-	plt.show()
-	#plt.pause(3)
-	#plt.close()
+	plt.show(block=False)
+	plt.pause(3)
+	plt.close()
 	
 
 def displayNotes(notes, start_octave, end_octave):
