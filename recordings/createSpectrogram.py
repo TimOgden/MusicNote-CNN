@@ -20,7 +20,7 @@ recording_length = 3
 channels = 1
 p_format = pyaudio.paInt16
 
-#These were calculated using my voice, may need to change with guitar
+
 start_threshold_silence = 120
 end_threshold_silence = 30
 
@@ -48,7 +48,7 @@ note_freq = {'A': [27.50,55.00,110.00,220.00,440.00,880.00,1760.00,3520.00,7040.
 
 colors = ['b','m','r','c','k','w']
 
-def record_for_time(time, filename, note=None, plot_spectrogram=True):
+def record_for_time(time, filename, notes=None, plot_spectrogram=True):
 	#filename = "\\recordings\\" + filename
 	print('* recording')
 
@@ -81,7 +81,7 @@ def record_for_time(time, filename, note=None, plot_spectrogram=True):
 	newAudio.export(filename, format="wav")
 
 	if plot_spectrogram:
-		plot_spect(filename, note, dispNotes=False)
+		plot_spect(filename, notes, dispNotes=False)
 	
 	#plt.pause(wav_plot_time)
 	#plt.close()
@@ -89,7 +89,9 @@ def record_for_time(time, filename, note=None, plot_spectrogram=True):
 	#with wave.open(filename, 'r') as f:
 		#plot_wav(f)
 
-def plot_spect(file, note, dispNotes=False):
+def plot_spect(file, notes, dispNotes=False):
+	freeze = False
+
 	sample_rates, samples = wavfile.read(file)
 	frequencies, times, spectrogram = signal.spectrogram(samples,sample_rates,nfft=2048, noverlap=1800, nperseg=2048)
 	fig = plt.figure(frameon=False)
@@ -101,30 +103,31 @@ def plot_spect(file, note, dispNotes=False):
 	plt.xlabel('Time [sec]')
 	
 	if dispNotes:
-		displayNotes([note], 4, 8)
+		displayNotes(notes, 4, 8)
 		
-	#plt.ylim(top=8000)\
-	fig.savefig(file, bbox_inches='tight', pad_inches=0)
+	plt.ylim(top=8000)
+	fig.savefig('C:/Users/Tim/ProgrammingProjects/MusicNote-CNN/recordings/spectrograms/' + file, bbox_inches='tight', pad_inches=0)
 	figManager = plt.get_current_fig_manager()
 	figManager.window.showMaximized()
-	plt.show(block=False)
-	plt.pause(3)
-	plt.close()
+	plt.legend()
+	if freeze:
+		plt.show()
+	else:
+		plt.show(block=False)
+		plt.pause(3)
+		plt.close()
 	
 
 def displayNotes(notes, start_octave, end_octave):
 	c = 0
 	looped = False
 	for note in notes:
-		if c>=len(colors):
+		if c>=len(colors)-1:
 			c = 0
 			looped = True
 		for i in range(start_octave, end_octave):
-			if not looped:
-				plt.axhline(note_freq[note][i], color=colors[c], linewidth=3)
-			else:
-				plt.axhline(note_freq[note][i], linestyle='--', color=colors[c], linewidth=3)
-			c+=1
+			plt.axhline(note_freq[note][i], color=colors[c], linewidth=3)
+		c+=1
 
 
 def plot_both(file1, file2):
@@ -139,7 +142,7 @@ def plot_both(file1, file2):
 	plt.subplot(212)
 	frequencies2, times2, spectrogram2 = signal.spectrogram(samples2,sample_rates2,nfft=2048, noverlap=1800, nperseg=2048)
 	try:
-		plt.pcolormesh(times2, frequencies2, 10*np.log10(spectrogram2))
+		plt.pcolormesh(times2, frequencies2, 10*np.log10(spectrogram2), cmap=plt.cm.binary)
 	except:
 		pass
 	plt.xlabel('Time')
@@ -148,6 +151,8 @@ def plot_both(file1, file2):
 	plt.show()
 
 def plot_wav(file, dispEnds=False, start=0, end=0):
+	freeze = False
+
 	signal = file.readframes(-1)
 	signal = np.fromstring(signal, 'Int16')
 	plt.figure()
@@ -155,9 +160,12 @@ def plot_wav(file, dispEnds=False, start=0, end=0):
 	if dispEnds:
 		plt.axvline(start, color='r')
 		plt.axvline(end, color='r')
-	plt.show(block=False)
-	plt.pause(wav_plot_time)
-	plt.close()
+	if freeze:
+		plt.show()
+	else:
+		plt.show(block=False)
+		plt.pause(wav_plot_time)
+		plt.close()
 	
 
 def find_whitespace(file, frames):
@@ -179,15 +187,15 @@ def find_whitespace(file, frames):
 	return start, end, start/len(x), end/len(x)
 
 chord_customizers = {'root_note': ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
-						'chord_type': ['major', 'minor', 'diminished', 'major 7th', 'minor 7th', 'dominant 7th',
-									 'sus2', 'sus4', 'augmented', 'extended', 'octave', '5th']} 
+						'chord_type': ['major', 'minor', 'major 7th', 'minor 7th',
+									 'sus2', 'sus4', '8th interval', 'fifth interval']} 
 									 # The octave and 5th are intervals, not chords, but they are so fundamental to rock music that
 									 	# I figured I must include them.
 
 def gen_random_chord():
 	note = random.randrange(0,len(chord_customizers['root_note']))
 	c_type = random.randrange(0,len(chord_customizers['chord_type']))
-	return chord_customizers['root_note'][note] + " " + chord_customizers['chord_type'][c_type]
+	return chord_customizers['root_note'][note] + chord_customizers['chord_type'][c_type]
 
 def gen_random_note():
 	note = random.randrange(0,len(chord_customizers['root_note']))
@@ -195,7 +203,7 @@ def gen_random_note():
 
 
 def plot_chords(chordDir):
-	path="C:\\Users\\Tim\\ProgrammingProjects\\MusicNote-CNN\\recordings\\downloads\\" + chordDir + " guitar chord"
+	path="C:\\Users\\Tim\\ProgrammingProjects\\MusicNote-CNN\\recordings\\downloads\\" + chordDir + " ukulele chord"
 	num_rows = 3
 	num_cols = 3
 	num_images = 3*3
@@ -232,34 +240,34 @@ each_chord = {}
 #plot_both('output0.wav', 'output1.wav')
 
 
-#record_for_time(recording_length, 'output0.wav', plot_spectrogram=True)
+#record_for_time(recording_length, 'output0.wav', plot_spectrogram=True, notes=['C','G','E'])
 
 c = 0
 while True:
-	chord = gen_random_note()
-	#chord = gen_random_chord()
-	#search_google(chord)
-	#plot_chords(chord)
+	#chord = gen_random_note()
+	chord = gen_random_chord()
+	search_google(chord)
+	plot_chords(chord)
 	print(chord)
-	time.sleep(5)
+	time.sleep(6)
 	if chord in each_chord:
 		each_chord[chord] += 1
 	else:
 		each_chord[chord] = 1
 	
-	if c % 10 == 0:
+	if c % 5 == 0:
 		print(each_chord)
 	c+=1
 
 	file = ""
-	num_rep = 5
+	num_rep = 6
 	for i in range(num_rep):
 		print('Recording #{} of {}'.format(i+1, num_rep))
 		keep = 'n'
 		while keep == 'n':
 			file = chord + "-" + str(each_chord[chord]) + '.png'
 			time.sleep(1)
-			record_for_time(recording_length, file, plot_spectrogram=True, note=chord)
+			record_for_time(recording_length, file, plot_spectrogram=True, notes=chord)
 			keep = input('Keep this recording? - ')
 		if keep == 'q':
 			os.remove(file)

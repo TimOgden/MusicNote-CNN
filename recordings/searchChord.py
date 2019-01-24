@@ -10,6 +10,6 @@ def search(val):
     paths = response.download(arguments)
 
 def search_google(chord):
-    val = chord + " guitar chord"
+    val = chord + " ukulele chord"
     if val not in os.listdir("C:\\Users\\Tim\\ProgrammingProjects\\MusicNote-CNN\\recordings\\downloads\\"):
         search(val)
