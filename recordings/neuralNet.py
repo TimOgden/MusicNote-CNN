@@ -137,7 +137,7 @@ def build_model():
 		keras.layers.Dropout(.1),
 		keras.layers.Dense(128, activation='relu'),
 		keras.layers.Dropout(.1),
-		keras.layers.Dense(96, activation='softmax') # Output layer
+		keras.layers.Dense(56, activation='softmax') # Output layer
 	])
 	model.compile(optimizer=keras.optimizers.Adam(), loss='categorical_crossentropy', metrics=['accuracy','mse'])
 	return model

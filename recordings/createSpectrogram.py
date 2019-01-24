@@ -11,7 +11,7 @@ import random
 from searchChord import search_google
 import sys, os
 import time
-
+import pickle
 
 p = pyaudio.PyAudio()
 rate = 44100
@@ -186,7 +186,7 @@ def find_whitespace(file, frames):
 		end -= 1
 	return start, end, start/len(x), end/len(x)
 
-chord_customizers = {'root_note': ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
+chord_customizers = {'root_note': ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
 						'chord_type': ['major', 'minor', 'major 7th', 'minor 7th',
 									 'sus2', 'sus4', '8th interval', 'fifth interval']} 
 									 # The octave and 5th are intervals, not chords, but they are so fundamental to rock music that
@@ -232,7 +232,18 @@ def plot_image(path, img):
 		pass
 
 
-each_chord = {}
+each_chord = {
+				'Bmajor': 1,
+				'Csus2': 6,
+				'Cfifth interval': 6,
+				'Cminor': 6,
+				'Dfifth interval': 6,
+				'Dsus2': 6,
+				'Emajor'
+				'Fminor 7th': 6,
+				'Gmajor 7th': 6,
+				'Gsus2': 12
+			}
 
 
 #record_for_time(recording_length, 'output0.wav', plot_spectrogram=False)
@@ -243,6 +254,16 @@ each_chord = {}
 #record_for_time(recording_length, 'output0.wav', plot_spectrogram=True, notes=['C','G','E'])
 
 c = 0
+
+# Load in the serialization of the chord list if it exists
+try :
+	each_chord = pickle.load(open('chord_list.p', 'rb'))
+	print(each_chord)
+except Exception as e:
+	print('Serialization not found!')
+	print(e)
+	pass
+
 while True:
 	#chord = gen_random_note()
 	chord = gen_random_chord()
@@ -274,8 +295,12 @@ while True:
 			sys.exit(0)
 		if keep == 'n':
 			os.remove(file)
+		if keep == 'yq':
+			pickle.dump(each_chord, open('chord_list.p','wb'))
+			sys.exit(0)
 
 		each_chord[chord] += 1
+	pickle.dump(each_chord, open('chord_list.p','wb'))
 
 
 stream.stop_stream()
