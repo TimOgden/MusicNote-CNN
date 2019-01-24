@@ -11,6 +11,7 @@ horz_pixel = 96
 
 training_data = {}
 testing_data = {}
+labels = {}
 
 def getImportantPixels(numImgs=None):
 	currentImage = 0
@@ -144,4 +145,4 @@ def build_model():
 
 model = build_model()
 
-
+model.fit()
