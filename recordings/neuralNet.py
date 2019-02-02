@@ -4,13 +4,17 @@ import glob, os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean
+from tqdm import tqdm
 
 #start_pixel, end_pixel = 0, 0
 start_pixel = 5
 end_pixel = 374
 horz_pixel = 96
 
-loadInData = False
+loadInData = True
+
+
+chords = {}
 
 def getImportantPixels(numImgs=None):
 	currentImage = 0
@@ -64,7 +68,6 @@ def getData(test_split=.8):
 					break
 				green_row_vals.append(g)
 			array.append(mean(green_row_vals))
-		
 		array = normalize(array)
 		np_array = np.array(array)
 
@@ -81,18 +84,25 @@ def getData(test_split=.8):
 		onehotConversion(testing_data_y)
 	return (training_data_x, training_data_y), (testing_data_x, testing_data_y)
 
-def getImportantPixels(filename):
-	img = imageio.imread(filename)
+def getImportantPixels(path):
+	img = imageio.imread(path)
 	np_img = np.array(img, dtype='int32')
 	array = []
 	for c in range(start_pixel, end_pixel):
-		r = np_img[horz_pixel][c][0]
-		g = np_img[horz_pixel][c][1]
-		b = np_img[horz_pixel][c][2]
-		a = np_img[horz_pixel][c][3]
-		array.append([r,g,b,a])
+		green_row_vals = []
+		for h in range(65, 500):
+			try:
+				#r = np_img[h][c][0]
+				g = np_img[h][c][1]
+				#b = np_img[h][c][2]
+				#a = np_img[h][c][3]
+			except:
+				break
+			green_row_vals.append(g)
+		array.append(mean(green_row_vals))
+	array = normalize(array)
 	np_array = np.array(array)
-	np_array = normalize(np_array)
+
 	return np_array
 
 def removeFileName(path):
@@ -117,22 +127,20 @@ chord_customizers = {'root_note': ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
 									 'sus2', 'sus4', '8th interval', 'fifth interval']} 
 
 def onehotConversion(train):
-	
 	for c, val in enumerate(train):
 		i = 0
-		for note in chord_customizers['root_note']:
-			for chord_type in chord_customizers['chord_type']:
-				try:
-					val = val[val.index('\\')+1:]
-				except:
-					print('Can\'t find \\ in', val)
-					sys.exit(0)
-				print(val[0], val[1:])
-				if val[0] == note and val[1:] == chord_type:
-					train[c] = np.zeros(56)
-					train[c][i] = 1
-					print('Converting to onehot:', train[c])
-				i+=1
+		if type(val)==str:
+			val = val[val.index('\\')+1:]
+			for note in chord_customizers['root_note']:
+				for chord_type in chord_customizers['chord_type']:
+					#print(val[0], val[1:])
+					if val[0] == note and val[1:] == chord_type:
+						train[c] = np.zeros(56)
+						train[c][i] = 1
+						#print(val, ':', i)
+						chords[i] = val
+						#print('Converting to onehot:', train[c])
+					i+=1
 	return train
 
 
@@ -159,9 +167,16 @@ plot_values(values1)
 plot_values(values2)
 '''
 
+def plot(arr, title):
+	for c, element in enumerate(arr):
+		plt.bar(c, element, color='b')
+	plt.title(title)
+	plt.show()
+
+
 def build_model():
 	model = keras.models.Sequential([
-		keras.layers.Dense(495, activation='relu', input_shape=(369,)), #Input layer
+		keras.layers.Dense(369, activation='relu', input_shape=(369,)), #Input layer
 		keras.layers.Dropout(.2),
 		keras.layers.Dense(256, activation='relu'),
 		keras.layers.Dropout(.2),
@@ -171,7 +186,7 @@ def build_model():
 		keras.layers.Dropout(.1),
 		keras.layers.Dense(56, activation='softmax') # Output layer
 	])
-	model.compile(optimizer=keras.optimizers.Adam(), loss='categorical_crossentropy', metrics=['accuracy','mse'])
+	model.compile(optimizer=keras.optimizers.Adam(), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 	return model
 
 model = build_model()
@@ -181,6 +196,12 @@ train_x = []
 train_y = []
 test_x = []
 test_y = []
+
+
+#plot(getImportantPixels('C:/Users/Tim/ProgrammingProjects/MusicNote-CNN/recordings/spectrograms/A8th interval-1.png'), 'A8th interval')
+#plot(getImportantPixels('C:/Users/Tim/ProgrammingProjects/MusicNote-CNN/recordings/spectrograms/Gsus2-1.png'), 'Gsus2')
+
+
 if not loadInData:
 	(train_x, train_y), (test_x, test_y) = getData(test_split=.8)
 	np.save('train_x.npy', train_x)
@@ -200,9 +221,13 @@ train_y = np.array(train_y)
 test_x = np.array(test_x)
 test_y = np.array(test_y)
 print(train_x.shape)
-
+print(train_y.shape)
 print('fitting network now')
 model.fit(x=train_x, y=train_y, epochs=5, verbose=2)
 
 print('saving weights')
-model.save('neural_net-epoch5-1/25/19.h5')
+model.save('neural_net-epoch5.model')
+
+predictions = model.predict(test_x)
+for prediction in predictions:
+	print(chords[np.argmax(prediction)])
